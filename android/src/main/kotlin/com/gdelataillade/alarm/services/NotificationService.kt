@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.gdelataillade.alarm.alarm.AlarmService.MusicNotificationBroadcastReceiver
 
 
 class NotificationHandler(private val context: Context) {
@@ -60,7 +59,7 @@ class NotificationHandler(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .setOngoing(true)
-            .setContentIntent(notificationPendingIntent)
+            .setContentIntent(pendingIntent)
             .setSound(null)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 

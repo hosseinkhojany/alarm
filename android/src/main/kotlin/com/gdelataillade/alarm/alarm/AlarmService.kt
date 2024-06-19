@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -45,6 +46,7 @@ class AlarmService : Service() {
         val action = intent.action
         val id = intent.getIntExtra("id", 0)
         if (action == "STOP_ALARM" && id != 0) {
+            Log.e("kilo", "STOP SERVICE $id")
             stopAlarm(id)
             return START_NOT_STICKY
         }
@@ -64,11 +66,17 @@ class AlarmService : Service() {
 //        val appIntent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
 //        val pendingIntent = PendingIntent.getActivity(this, id, appIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
+        val stopIntent = Intent(this, AlarmService::class.java)
+            stopIntent.action = "STOP_ALARM"
+            stopIntent.putExtra("id", id)
 
-        val appIntent = Intent(this, MusicNotificationBroadcastReceiver::class.java)
-        appIntent.putExtra("id", id)
-        val pendingIntent = PendingIntent.getBroadcast(this, 0, appIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val notification = notificationHandler.buildNotification(notificationTitle, notificationBody, fullScreenIntent, pendingIntent)
+        val stopPendingIntent = PendingIntent.getService(
+            this,
+            0,
+            stopIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val notification = notificationHandler.buildNotification(notificationTitle, notificationBody, fullScreenIntent, stopPendingIntent)
 
         // Starting foreground service safely
         try {
@@ -117,16 +125,6 @@ class AlarmService : Service() {
         return START_STICKY
     }
 
-
-    class MusicNotificationBroadcastReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val id = intent.extras?.getInt("id") ?: return
-                val stopIntent = Intent(context, AlarmService::class.java)
-                stopIntent.action = "STOP_ALARM"
-                stopIntent.putExtra("id", id)
-                context.stopService(stopIntent)
-        }
-    }
 
 
     fun stopAlarm(id: Int) {
