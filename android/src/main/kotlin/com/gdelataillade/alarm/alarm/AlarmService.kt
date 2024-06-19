@@ -1,5 +1,6 @@
 package com.gdelataillade.alarm.alarm
 
+import android.app.AlarmManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.PendingIntent
 import android.app.Service
@@ -59,11 +60,14 @@ class AlarmService : Service() {
 
         // Handling notification
         val notificationHandler = NotificationHandler(this)
-        val appIntent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
+
+//        val appIntent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
 //        val pendingIntent = PendingIntent.getActivity(this, id, appIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
-        val pendingIntent = PendingIntent.getBroadcast(this, 0,
-            Intent(this, MusicNotificationBroadcastReceiver::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+        val appIntent = Intent(this, MusicNotificationBroadcastReceiver::class.java)
+        appIntent.putExtra("id", id)
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, appIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = notificationHandler.buildNotification(notificationTitle, notificationBody, fullScreenIntent, pendingIntent)
 
         // Starting foreground service safely
@@ -116,7 +120,11 @@ class AlarmService : Service() {
 
     class MusicNotificationBroadcastReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            context.startService(Intent("STOP_ALARM"))
+            val id = intent.extras?.getInt("id") ?: return
+                val stopIntent = Intent(context, AlarmService::class.java)
+                stopIntent.action = "STOP_ALARM"
+                stopIntent.putExtra("id", id)
+                context.stopService(stopIntent)
         }
     }
 
