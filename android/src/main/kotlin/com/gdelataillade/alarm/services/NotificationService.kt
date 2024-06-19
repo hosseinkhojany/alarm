@@ -6,11 +6,10 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Build
-import android.net.Uri
-import android.media.AudioAttributes
 import androidx.core.app.NotificationCompat
+import com.gdelataillade.alarm.alarm.AlarmService.MusicNotificationBroadcastReceiver
+
 
 class NotificationHandler(private val context: Context) {
     companion object {
@@ -54,7 +53,7 @@ class NotificationHandler(private val context: Context) {
         }
 
         notificationBuilder
-            .setSmallIcon(appIconResId)
+            .setSmallIcon(R.drawable.ic_stat_logo)
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_MAX)

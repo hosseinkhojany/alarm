@@ -1,21 +1,20 @@
 package com.gdelataillade.alarm.alarm
 
+import android.app.ForegroundServiceStartNotAllowedException
+import android.app.PendingIntent
+import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.IBinder
+import android.os.PowerManager
 import com.gdelataillade.alarm.services.AudioService
 import com.gdelataillade.alarm.services.VibrationService
 import com.gdelataillade.alarm.services.VolumeService
-
-import android.app.Service
-import android.app.PendingIntent
-import android.app.ForegroundServiceStartNotAllowedException
-import android.content.Intent
-import android.content.Context
-import android.content.pm.ServiceInfo
-import android.os.IBinder
-import android.os.PowerManager
-import android.os.Build
 import io.flutter.Log
-import io.flutter.embedding.engine.dart.DartExecutor
-import io.flutter.embedding.engine.FlutterEngine
+
 
 class AlarmService : Service() {
     private var audioService: AudioService? = null
@@ -61,7 +60,10 @@ class AlarmService : Service() {
         // Handling notification
         val notificationHandler = NotificationHandler(this)
         val appIntent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
-        val pendingIntent = PendingIntent.getActivity(this, id, appIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+//        val pendingIntent = PendingIntent.getActivity(this, id, appIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+        val pendingIntent = PendingIntent.getBroadcast(this, 0,
+            Intent(this, MusicNotificationBroadcastReceiver::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = notificationHandler.buildNotification(notificationTitle, notificationBody, fullScreenIntent, pendingIntent)
 
         // Starting foreground service safely
@@ -110,6 +112,14 @@ class AlarmService : Service() {
 
         return START_STICKY
     }
+
+
+    class MusicNotificationBroadcastReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            context.startService(Intent("STOP_ALARM"))
+        }
+    }
+
 
     fun stopAlarm(id: Int) {
         try {

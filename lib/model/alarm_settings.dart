@@ -11,6 +11,7 @@ class AlarmSettings {
     required this.assetAudioPath,
     required this.notificationTitle,
     required this.notificationBody,
+    this.notificationIcon,
     this.loopAudio = true,
     this.vibrate = true,
     this.volume,
@@ -30,6 +31,7 @@ class AlarmSettings {
         fadeDuration: json['fadeDuration'] as double,
         notificationTitle: json['notificationTitle'] as String? ?? '',
         notificationBody: json['notificationBody'] as String? ?? '',
+        notificationIcon: json['notificationIcon'],
         enableNotificationOnKill:
             json['enableNotificationOnKill'] as bool? ?? true,
         androidFullScreenIntent:
@@ -96,6 +98,9 @@ class AlarmSettings {
   /// Body of the notification to be shown when alarm is triggered.
   final String notificationBody;
 
+  /// Icon of the notification to be shown when alarm is triggered.
+  final String? notificationIcon;
+
   /// Whether to show a notification when application is killed by user.
   ///
   /// - Android: the alarm should still trigger even if the app is killed,
@@ -130,6 +135,7 @@ class AlarmSettings {
     hash = hash ^ fadeDuration.hashCode;
     hash = hash ^ (notificationTitle.hashCode);
     hash = hash ^ (notificationBody.hashCode);
+    hash = hash ^ (notificationIcon.hashCode);
     hash = hash ^ enableNotificationOnKill.hashCode;
     hash = hash & 0x3fffffff;
 
@@ -148,6 +154,7 @@ class AlarmSettings {
     double? fadeDuration,
     String? notificationTitle,
     String? notificationBody,
+    String? notificationIcon,
     bool? enableNotificationOnKill,
     bool? androidFullScreenIntent,
   }) {
@@ -161,6 +168,7 @@ class AlarmSettings {
       fadeDuration: fadeDuration ?? this.fadeDuration,
       notificationTitle: notificationTitle ?? this.notificationTitle,
       notificationBody: notificationBody ?? this.notificationBody,
+      notificationIcon: notificationIcon ?? this.notificationIcon,
       enableNotificationOnKill:
           enableNotificationOnKill ?? this.enableNotificationOnKill,
       androidFullScreenIntent:
@@ -179,6 +187,7 @@ class AlarmSettings {
         'fadeDuration': fadeDuration,
         'notificationTitle': notificationTitle,
         'notificationBody': notificationBody,
+        'notificationIcon': notificationIcon,
         'enableNotificationOnKill': enableNotificationOnKill,
         'androidFullScreenIntent': androidFullScreenIntent,
       };
@@ -208,6 +217,7 @@ class AlarmSettings {
           fadeDuration == other.fadeDuration &&
           notificationTitle == other.notificationTitle &&
           notificationBody == other.notificationBody &&
+          notificationIcon == other.notificationIcon &&
           enableNotificationOnKill == other.enableNotificationOnKill &&
           androidFullScreenIntent == other.androidFullScreenIntent;
 }
