@@ -69,8 +69,7 @@ class Alarm {
     alarmSettingsValidation(alarmSettings);
 
     for (final alarm in Alarm.getAlarms()) {
-      if (alarm.id == alarmSettings.id ||
-          alarm.dateTime.isSameSecond(alarmSettings.dateTime)) {
+      if (alarm.id == alarmSettings.id) {
         await Alarm.stop(alarm.id);
       }
     }
@@ -94,21 +93,6 @@ class Alarm {
 
   /// Validates [alarmSettings] fields.
   static void alarmSettingsValidation(AlarmSettings alarmSettings) {
-    if (alarmSettings.id == 0 || alarmSettings.id == -1) {
-      throw AlarmException(
-        'Alarm id cannot be 0 or -1. Provided: ${alarmSettings.id}',
-      );
-    }
-    if (alarmSettings.id > 2147483647) {
-      throw AlarmException(
-        '''Alarm id cannot be set larger than Int max value (2147483647). Provided: ${alarmSettings.id}''',
-      );
-    }
-    if (alarmSettings.id < -2147483648) {
-      throw AlarmException(
-        '''Alarm id cannot be set smaller than Int min value (-2147483648). Provided: ${alarmSettings.id}''',
-      );
-    }
     if (alarmSettings.volume != null &&
         (alarmSettings.volume! < 0 || alarmSettings.volume! > 1)) {
       throw AlarmException(
@@ -138,31 +122,32 @@ class Alarm {
       AlarmStorage.setNotificationContentOnAppKill(title, body);
 
   /// Stops alarm.
-  static Future<bool> stop(int id) async {
+  static Future<bool> stop(String id) async {
     await AlarmStorage.unsaveAlarm(id);
 
     return iOS ? await IOSAlarm.stopAlarm(id) : await AndroidAlarm.stop(id);
   }
 
-  /// Stops all the alarms.
-  static Future<void> stopAll() async {
-    final alarms = AlarmStorage.getSavedAlarms();
-
-    for (final alarm in alarms) {
-      await stop(alarm.id);
-    }
+  /// Stops alarm.
+  static Future<bool> stopAll() async {
+    return iOS ? await IOSAlarm.stopAlarmAll() : await AndroidAlarm.stopAlarmAll();
   }
 
   /// Whether the alarm is ringing.
-  static Future<bool> isRinging(int id) async => iOS
+  static Future<bool> isRinging(String id) async => iOS
       ? await IOSAlarm.checkIfRinging(id)
       : await AndroidAlarm.isRinging(id);
+
+  /// Whether the alarm is ringing.
+  static Future<bool> isRingingAny() async => iOS
+      ? await IOSAlarm.isRingingAny()
+      : await AndroidAlarm.isRingingAny();
 
   /// Whether an alarm is set.
   static bool hasAlarm() => AlarmStorage.hasAlarm();
 
   /// Returns alarm by given id. Returns null if not found.
-  static AlarmSettings? getAlarm(int id) {
+  static AlarmSettings? getAlarm(String id) {
     final alarms = AlarmStorage.getSavedAlarms();
 
     for (final alarm in alarms) {

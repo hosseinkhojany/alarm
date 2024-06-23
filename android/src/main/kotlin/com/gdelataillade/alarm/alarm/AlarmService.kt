@@ -1,13 +1,10 @@
 package com.gdelataillade.alarm.alarm
 
-import android.app.AlarmManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -26,7 +23,7 @@ class AlarmService : Service() {
 
     companion object {
         @JvmStatic
-        var ringingAlarmIds: List<Int> = listOf()
+        var ringingAlarmIds: List<String> = listOf()
     }
 
     override fun onCreate() {
@@ -44,21 +41,21 @@ class AlarmService : Service() {
         }
 
         val action = intent.action
-        val id = intent.getIntExtra("id", 0)
-        if (action == "STOP_ALARM" && id != 0) {
+        val id = intent.getStringExtra("id") ?: ""
+        if (action == "STOP_ALARM" && !id.isNullOrEmpty()) {
             Log.e("kilo", "STOP SERVICE $id")
             stopAlarm(id)
             return START_NOT_STICKY
         }
 
         val assetAudioPath = intent.getStringExtra("assetAudioPath") ?: return START_NOT_STICKY // Fallback if null
-        val loopAudio = intent.getBooleanExtra("loopAudio", true)
-        val vibrate = intent.getBooleanExtra("vibrate", true)
+        val loopAudio = intent.getBooleanExtra("loopAudio", false)
+        val vibrate = intent.getBooleanExtra("vibrate", false)
         val volume = intent.getDoubleExtra("volume", -1.0)
         val fadeDuration = intent.getDoubleExtra("fadeDuration", 0.0)
         val notificationTitle = intent.getStringExtra("notificationTitle") ?: "Default Title" // Default if null
         val notificationBody = intent.getStringExtra("notificationBody") ?: "Default Body" // Default if null
-        val fullScreenIntent = intent.getBooleanExtra("fullScreenIntent", true)
+        val fullScreenIntent = intent.getBooleanExtra("fullScreenIntent", false)
 
         // Handling notification
         val notificationHandler = NotificationHandler(this)
@@ -72,7 +69,7 @@ class AlarmService : Service() {
 
         val stopPendingIntent = PendingIntent.getService(
             this,
-            0,
+            id.getIdFlagSecondHalfAsInt(),
             stopIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -81,9 +78,9 @@ class AlarmService : Service() {
         // Starting foreground service safely
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                startForeground(id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+                startForeground(id.getIdFlagSecondHalfAsInt(), notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
             } else {
-                startForeground(id, notification)
+                startForeground(id.getIdFlagSecondHalfAsInt(), notification)
             }
         } catch (e: ForegroundServiceStartNotAllowedException) {
             Log.e("AlarmService", "Foreground service start not allowed", e)
@@ -127,7 +124,7 @@ class AlarmService : Service() {
 
 
 
-    fun stopAlarm(id: Int) {
+    fun stopAlarm(id: String) {
         try {
             val playingIds = audioService?.getPlayingMediaPlayersIds() ?: listOf()
             ringingAlarmIds = playingIds
@@ -144,7 +141,11 @@ class AlarmService : Service() {
                 stopSelf()
             }
 
-            stopForeground(true)
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            }else{
+                stopForeground(true)
+            }
         } catch (e: IllegalStateException) {
             Log.e("AlarmService", "Illegal State: ${e.message}", e)
         } catch (e: Exception) {
@@ -159,7 +160,11 @@ class AlarmService : Service() {
         vibrationService?.stopVibrating()
         volumeService?.restorePreviousVolume(showSystemUI)
 
-        stopForeground(true)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        }else{
+            stopForeground(true)
+        }
 
         // Call the superclass method
         super.onDestroy()

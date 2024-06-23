@@ -9,6 +9,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.JsonReader
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
@@ -17,6 +18,15 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.Log
+import org.json.JSONObject
+
+
+fun String.getIdFlagSecondHalfAsInt(): Int {
+    val jsonObject = JSONObject(this)
+    val idFlag = jsonObject.getLong("idFlag").toString()
+    val secondHalf = idFlag.substring(idFlag.length / 2).toLong()
+    return secondHalf.toInt()
+}
 
 class AlarmPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var context: Context
@@ -49,7 +59,7 @@ class AlarmPlugin: FlutterPlugin, MethodCallHandler {
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "setAlarm" -> {
-                val id = call.argument<Int>("id")!!
+                val id = call.argument<String>("id")!!
                 val delayInSeconds = call.argument<Int>("delayInSeconds")!!
 
                 val alarmIntent = createAlarmIntent(context, call, id)
@@ -63,7 +73,7 @@ class AlarmPlugin: FlutterPlugin, MethodCallHandler {
                 result.success(true)
             }
             "stopAlarm" -> {
-                val id = call.argument<Int>("id")
+                val id = call.argument<String>("id")
                 if (id == null) {
                     result.error("INVALID_ID", "Alarm ID is null", null)
                     return
@@ -81,8 +91,8 @@ class AlarmPlugin: FlutterPlugin, MethodCallHandler {
                 // Intent to cancel the future alarm if it's set
                 val alarmIntent = Intent(context, AlarmReceiver::class.java)
                 val pendingIntent = PendingIntent.getBroadcast(
-                    context, 
-                    id, 
+                    context,
+                    id.getIdFlagSecondHalfAsInt(),
                     alarmIntent, 
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
@@ -93,11 +103,17 @@ class AlarmPlugin: FlutterPlugin, MethodCallHandler {
 
                 result.success(true)
             }
+            "getRingingAlarms" -> {
+                result.success(AlarmService.ringingAlarmIds)
+            }
             "isRinging" -> {
-                val id = call.argument<Int>("id")
+                val id = call.argument<String>("id")
                 val ringingAlarmIds = AlarmService.ringingAlarmIds
                 val isRinging = ringingAlarmIds.contains(id)
                 result.success(isRinging)
+            }
+            "isRingingAny" -> {
+                result.success(AlarmService.ringingAlarmIds.isNotEmpty())
             }
             "setNotificationOnKillService" -> {
                 val title = call.argument<String>("title")
@@ -122,13 +138,13 @@ class AlarmPlugin: FlutterPlugin, MethodCallHandler {
         }
     }
 
-    fun createAlarmIntent(context: Context, call: MethodCall, id: Int?): Intent {
+    fun createAlarmIntent(context: Context, call: MethodCall, id: String?): Intent {
         val alarmIntent = Intent(context, AlarmReceiver::class.java)
         setIntentExtras(alarmIntent, call, id)
         return alarmIntent
     }
 
-    fun setIntentExtras(intent: Intent, call: MethodCall, id: Int?) {
+    fun setIntentExtras(intent: Intent, call: MethodCall, id: String?) {
         intent.putExtra("id", id)
         intent.putExtra("assetAudioPath", call.argument<String>("assetAudioPath"))
         intent.putExtra("loopAudio", call.argument<Boolean>("loopAudio"))
@@ -147,12 +163,12 @@ class AlarmPlugin: FlutterPlugin, MethodCallHandler {
         }, delayInSeconds * 1000L)
     }
 
-    fun handleDelayedAlarm(context: Context, intent: Intent, delayInSeconds: Int, id: Int) {
+    fun handleDelayedAlarm(context: Context, intent: Intent, delayInSeconds: Int, id: String) {
         try {
             val triggerTime = System.currentTimeMillis() + delayInSeconds * 1000L
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                id,
+                id.getIdFlagSecondHalfAsInt(),
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )

@@ -22,7 +22,7 @@ class AlarmSettings {
 
   /// Constructs an `AlarmSettings` instance from the given JSON data.
   factory AlarmSettings.fromJson(Map<String, dynamic> json) => AlarmSettings(
-        id: json['id'] as int,
+        id: json['id'] as String,
         dateTime: DateTime.fromMicrosecondsSinceEpoch(json['dateTime'] as int),
         assetAudioPath: json['assetAudioPath'] as String,
         loopAudio: json['loopAudio'] as bool,
@@ -31,7 +31,7 @@ class AlarmSettings {
         fadeDuration: json['fadeDuration'] as double,
         notificationTitle: json['notificationTitle'] as String? ?? '',
         notificationBody: json['notificationBody'] as String? ?? '',
-        notificationIcon: json['notificationIcon'],
+        notificationIcon: json['notificationIcon'] as String?,
         enableNotificationOnKill:
             json['enableNotificationOnKill'] as bool? ?? true,
         androidFullScreenIntent:
@@ -39,7 +39,7 @@ class AlarmSettings {
       );
 
   /// Unique identifier assiocated with the alarm. Cannot be 0 or -1;
-  final int id;
+  final String id;
 
   /// Date and time when the alarm will be triggered.
   final DateTime dateTime;
@@ -145,7 +145,7 @@ class AlarmSettings {
   /// Creates a copy of `AlarmSettings` but with the given fields replaced with
   /// the new values.
   AlarmSettings copyWith({
-    int? id,
+    String? id,
     DateTime? dateTime,
     String? assetAudioPath,
     bool? loopAudio,

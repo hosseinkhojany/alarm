@@ -8,8 +8,8 @@ import java.util.TimerTask
 import io.flutter.Log
 
 class AudioService(private val context: Context) {
-    private val mediaPlayers = ConcurrentHashMap<Int, MediaPlayer>()
-    private val timers = ConcurrentHashMap<Int, Timer>()
+    private val mediaPlayers = ConcurrentHashMap<String, MediaPlayer>()
+    private val timers = ConcurrentHashMap<String, Timer>()
 
     private var onAudioComplete: (() -> Unit)? = null
 
@@ -21,11 +21,11 @@ class AudioService(private val context: Context) {
         return mediaPlayers.isEmpty()
     }
 
-    fun getPlayingMediaPlayersIds(): List<Int> {
+    fun getPlayingMediaPlayersIds(): List<String> {
         return mediaPlayers.filter { (_, mediaPlayer) -> mediaPlayer.isPlaying }.keys.toList()
     }
 
-    fun playAudio(id: Int, filePath: String, loopAudio: Boolean, fadeDuration: Double?) {
+    fun playAudio(id: String, filePath: String, loopAudio: Boolean, fadeDuration: Double?) {
         stopAudio(id) // Stop and release any existing MediaPlayer and Timer for this ID
 
         val baseAppFlutterPath = context.filesDir.parent + "/app_flutter/"
@@ -74,18 +74,21 @@ class AudioService(private val context: Context) {
         }
     }
 
-    fun stopAudio(id: Int) {
+    fun stopAudio(id: String) {
         timers[id]?.cancel()
         timers.remove(id)
 
-        mediaPlayers[id]?.apply {
-            if (isPlaying) {
-                stop()
-            }
-            reset()
-            release()
+        for (mediaPlayer in mediaPlayers) {
+            Log.e("kilo", mediaPlayer.key +":"+ mediaPlayer.value.isPlaying);
+                mediaPlayer.value.apply {
+                    if (isPlaying) {
+                        stop()
+                        reset()
+                        release()
+                        mediaPlayers.remove(id)
+                    }
+                }
         }
-        mediaPlayers.remove(id)
     }
 
     private fun startFadeIn(mediaPlayer: MediaPlayer, duration: Double, timer: Timer) {

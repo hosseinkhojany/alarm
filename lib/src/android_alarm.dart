@@ -24,7 +24,7 @@ class AndroidAlarm {
       (dynamic event) {
         try {
           final eventMap = Map<String, dynamic>.from(event as Map);
-          final id = eventMap['id'] as int;
+          final id = eventMap['id'] as String;
           final settings = Alarm.getAlarm(id);
           if (settings != null) Alarm.ringStream.add(settings);
         } catch (e) {
@@ -50,6 +50,7 @@ class AndroidAlarm {
         {
           'id': settings.id,
           'delayInSeconds': delay.inSeconds,
+          'exactTime': settings.dateTime.toIso8601String(),
           'assetAudioPath': settings.assetAudioPath,
           'loopAudio': settings.loopAudio,
           'vibrate': settings.vibrate,
@@ -87,7 +88,7 @@ class AndroidAlarm {
 
   /// Sends the message `stop` to the isolate so the audio player
   /// can stop playing and dispose.
-  static Future<bool> stop(int id) async {
+  static Future<bool> stop(String id) async {
     try {
       final res = await platform.invokeMethod('stopAlarm', {'id': id}) as bool;
       if (res) alarmPrint('Alarm with id $id stopped');
@@ -99,10 +100,52 @@ class AndroidAlarm {
     }
   }
 
+  /// Sends the message `stop` to the isolate so the audio player
+  /// can stop playing and dispose.
+  static Future<bool> stopAll() async {
+    try {
+      final res = await platform.invokeMethod('stopAlarmAll') as bool;
+      if (res) alarmPrint('Alarm with id stopped');
+      if (!hasOtherAlarms) await stopNotificationOnKillService();
+      return res;
+    } catch (e) {
+      alarmPrint('Failed to stop alarm: $e');
+      return false;
+    }
+  }
+
+
+  /// Disposes timer and FGBG subscription
+  /// and calls the native `stopAlarm` function.
+  static Future<bool> stopAlarmAll() async {
+
+    final res = await platform.invokeMethod<List<String>>(
+      'getRingingAlarms',
+    ) ??
+        [];
+
+    for (final value in res) {
+      await stop(value);
+    }
+
+    return true;
+  }
+
   /// Checks if the alarm with given [id] is ringing.
-  static Future<bool> isRinging(int id) async {
+  static Future<bool> isRinging(String id) async {
     try {
       final res = await platform.invokeMethod('isRinging', {'id': id}) as bool;
+      return res;
+    } catch (e) {
+      alarmPrint('Failed to check if alarm is ringing: $e');
+      return false;
+    }
+  }
+
+  /// Checks if the alarm with given [id] is ringing.
+  static Future<bool> isRingingAny() async {
+    try {
+      final res = await platform.invokeMethod('isRingingAny') as bool;
       return res;
     } catch (e) {
       alarmPrint('Failed to check if alarm is ringing: $e');

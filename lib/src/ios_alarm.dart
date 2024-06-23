@@ -12,10 +12,10 @@ class IOSAlarm {
   static const methodChannel = MethodChannel('com.gdelataillade/alarm');
 
   /// Map of alarm timers.
-  static Map<int, Timer?> timers = {};
+  static Map<String, Timer?> timers = {};
 
   /// Map of foreground/background subscriptions.
-  static Map<int, StreamSubscription<FGBGType>?> fgbgSubscriptions = {};
+  static Map<String, StreamSubscription<FGBGType>?> fgbgSubscriptions = {};
 
   /// Calls the native function `setAlarm` and listens to alarm ring state.
   ///
@@ -90,7 +90,7 @@ class IOSAlarm {
 
   /// Disposes timer and FGBG subscription
   /// and calls the native `stopAlarm` function.
-  static Future<bool> stopAlarm(int id) async {
+  static Future<bool> stopAlarm(String id) async {
     disposeAlarm(id);
 
     final res = await methodChannel.invokeMethod<bool?>(
@@ -103,11 +103,37 @@ class IOSAlarm {
 
     return res;
   }
+  /// Disposes timer and FGBG subscription
+  /// and calls the native `stopAlarm` function.
+  static Future<bool> stopAlarmAll() async {
+
+    final res = await methodChannel.invokeMethod<List<String>>(
+          'getRingingAlarms',
+        ) ??
+        [];
+
+    for (final value in res) {
+      await stopAlarm(value);
+    }
+
+    return true;
+  }
+
+  /// Checks if the alarm with given [id] is ringing.
+  static Future<bool> isRingingAny() async {
+    try {
+      final res = await methodChannel.invokeMethod('isRingingAny') as bool;
+      return res;
+    } catch (e) {
+      alarmPrint('Failed to check if alarm is ringing: $e');
+      return false;
+    }
+  }
 
   /// Checks whether alarm is ringing by getting the native audio player's
   /// current time at two different moments. If the two values are different,
   /// it means the alarm is ringing and then returns `true`.
-  static Future<bool> checkIfRinging(int id) async {
+  static Future<bool> checkIfRinging(String id) async {
     final pos1 = await methodChannel
             .invokeMethod<double?>('audioCurrentTime', {'id': id}) ??
         0.0;
@@ -122,7 +148,7 @@ class IOSAlarm {
   /// Listens when app goes foreground so we can check if alarm is ringing.
   /// When app goes background, periodical timer will be disposed.
   static void listenAppStateChange({
-    required int id,
+    required String id,
     required void Function() onForeground,
     required void Function() onBackground,
   }) {
@@ -133,7 +159,7 @@ class IOSAlarm {
   }
 
   /// Checks periodically if alarm is ringing, as long as app is in foreground.
-  static Timer periodicTimer(void Function()? onRing, DateTime dt, int id) {
+  static Timer periodicTimer(void Function()? onRing, DateTime dt, String id) {
     return Timer.periodic(const Duration(milliseconds: 200), (_) {
       if (DateTime.now().isBefore(dt)) return;
       disposeAlarm(id);
@@ -142,13 +168,13 @@ class IOSAlarm {
   }
 
   /// Disposes alarm timer.
-  static void disposeTimer(int id) {
+  static void disposeTimer(String id) {
     timers[id]?.cancel();
     timers.removeWhere((key, value) => key == id);
   }
 
   /// Disposes alarm timer and FGBG subscription.
-  static void disposeAlarm(int id) {
+  static void disposeAlarm(String id) {
     disposeTimer(id);
     fgbgSubscriptions[id]?.cancel();
     fgbgSubscriptions.removeWhere((key, value) => key == id);

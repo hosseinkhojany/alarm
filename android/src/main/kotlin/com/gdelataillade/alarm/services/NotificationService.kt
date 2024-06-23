@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import kotlin.random.Random
 
 
 class NotificationHandler(private val context: Context) {
@@ -36,14 +37,14 @@ class NotificationHandler(private val context: Context) {
     }
 
     fun buildNotification(title: String, body: String, fullScreen: Boolean, pendingIntent: PendingIntent): Notification {
-        val appIconResId = context.packageManager.getApplicationInfo(context.packageName, 0).icon
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: Intent()
-        val notificationPendingIntent = PendingIntent.getActivity(
-            context, 
-            0,
-            intent, 
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+//        val appIconResId = context.packageManager.getApplicationInfo(context.packageName, 0).icon
+//        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: Intent()
+//        val notificationPendingIntent = PendingIntent.getActivity(
+//            context,
+//            Random.nextInt(100000),
+//            intent,
+//            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//        )
 
         val notificationBuilder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(context, CHANNEL_ID) // For API 26 and above
@@ -60,6 +61,7 @@ class NotificationHandler(private val context: Context) {
             .setAutoCancel(true)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
+            .setDeleteIntent(pendingIntent)
             .setSound(null)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
@@ -67,9 +69,9 @@ class NotificationHandler(private val context: Context) {
             notificationBuilder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
         }
 
-        if (fullScreen) {
-            notificationBuilder.setFullScreenIntent(notificationPendingIntent, true)
-        }
+//        if (fullScreen) {
+//            notificationBuilder.setFullScreenIntent(notificationPendingIntent, true)
+//        }
 
         return notificationBuilder.build()
     }

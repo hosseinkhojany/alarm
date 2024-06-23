@@ -5,8 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Class that handles the local storage of the alarm info.
 class AlarmStorage {
-  /// Prefix to be used in local storage to identify alarm info.
-  static const prefix = '__alarm_id__';
 
   /// Key to be used in local storage to identify
   /// notification on app kill title.
@@ -31,22 +29,16 @@ class AlarmStorage {
   /// Saves alarm info in local storage so we can restore it later
   /// in the case app is terminated.
   static Future<void> saveAlarm(AlarmSettings alarmSettings) => prefs.setString(
-        '$prefix${alarmSettings.id}',
+        alarmSettings.id,
         json.encode(alarmSettings.toJson()),
       );
 
   /// Removes alarm from local storage.
-  static Future<void> unsaveAlarm(int id) => prefs.remove('$prefix$id');
+  static Future<void> unsaveAlarm(String id) => prefs.remove(id);
 
   /// Whether at least one alarm is set.
   static bool hasAlarm() {
-    final keys = prefs.getKeys();
-
-    for (final key in keys) {
-      if (key.startsWith(prefix)) return true;
-    }
-
-    return false;
+    return prefs.getKeys().isNotEmpty;
   }
 
   /// Returns all alarms info from local storage in the case app is terminated
@@ -56,12 +48,12 @@ class AlarmStorage {
     final keys = prefs.getKeys();
 
     for (final key in keys) {
-      if (key.startsWith(prefix)) {
-        final res = prefs.getString(key);
-        alarms.add(
-          AlarmSettings.fromJson(json.decode(res!) as Map<String, dynamic>),
-        );
-      }
+      final res = prefs.get(key);
+        if(res.toString().startsWith('{') && res.toString().endsWith('{')){
+          alarms.add(
+            AlarmSettings.fromJson(json.decode(res! as String) as Map<String, dynamic>),
+          );
+        }
     }
 
     return alarms;
