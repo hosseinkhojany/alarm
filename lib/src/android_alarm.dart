@@ -131,6 +131,16 @@ class AndroidAlarm {
     return true;
   }
 
+  /// Return Clicked Alarm
+  static Future<String?> getClickedAlarm() async {
+
+    final res = await platform.invokeMethod<String?>(
+      'getClickedAlarm',
+    );
+
+    return res;
+  }
+
   /// Checks if the alarm with given [id] is ringing.
   static Future<bool> isRinging(String id) async {
     try {

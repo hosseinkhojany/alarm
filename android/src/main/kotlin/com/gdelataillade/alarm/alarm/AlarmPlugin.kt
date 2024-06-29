@@ -28,6 +28,17 @@ fun String.getIdFlagSecondHalfAsInt(): Int {
     return secondHalf.toInt()
 }
 
+fun Context.setClickedAlarmPrefs(id: String?){
+    val sharedPreferences = this.getSharedPreferences("ClickedAlarmPrefs", Context.MODE_PRIVATE)
+    val editor = sharedPreferences.edit()
+    editor.putString("key", id)
+    editor.apply()
+}
+fun Context.getClickedAlarmPrefs(): String? {
+    val sharedPreferences = this.getSharedPreferences("ClickedAlarmPrefs", Context.MODE_PRIVATE)
+    return sharedPreferences.getString("key", null)
+}
+
 class AlarmPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var context: Context
     private lateinit var methodChannel : MethodChannel
@@ -58,6 +69,10 @@ class AlarmPlugin: FlutterPlugin, MethodCallHandler {
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
+            "getClickedAlarm" -> {
+                result.success(context.getClickedAlarmPrefs())
+                context.setClickedAlarmPrefs(null)
+            }
             "setAlarm" -> {
                 val id = call.argument<String>("id")!!
                 val delayInSeconds = call.argument<Int>("delayInSeconds")!!

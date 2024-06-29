@@ -132,6 +132,12 @@ class Alarm {
   static Future<bool> stopAll() async {
     return iOS ? await IOSAlarm.stopAlarmAll() : await AndroidAlarm.stopAlarmAll();
   }
+  /// Stops alarm.
+  static Future<String?> getClickedAlarmId() async {
+    return iOS ? throw const AlarmException(
+      'not implemented',
+    ) : await AndroidAlarm.getClickedAlarm();
+  }
 
   /// Whether the alarm is ringing.
   static Future<bool> isRinging(String id) async => iOS

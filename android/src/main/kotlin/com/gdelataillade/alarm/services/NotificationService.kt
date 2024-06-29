@@ -8,7 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import kotlin.random.Random
+import com.gdelataillade.alarm.services.NotificationReceiver
 
 
 class NotificationHandler(private val context: Context) {
@@ -36,15 +36,33 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun buildNotification(title: String, body: String, fullScreen: Boolean, pendingIntent: PendingIntent): Notification {
+    fun buildNotification(id: String, title: String, body: String, fullScreen: Boolean): Notification {
 //        val appIconResId = context.packageManager.getApplicationInfo(context.packageName, 0).icon
 //        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: Intent()
 //        val notificationPendingIntent = PendingIntent.getActivity(
 //            context,
-//            Random.nextInt(100000),
+//            id.getIdFlagSecondHalfAsInt(),
 //            intent,
 //            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 //        )
+
+        val intent = Intent(context, NotificationReceiver::class.java)
+        intent.putExtra("id", id)
+        val pendingIntent =
+            PendingIntent.getBroadcast(context,
+                id.getIdFlagSecondHalfAsInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+
+        val stopIntent = Intent(context, AlarmService::class.java)
+        stopIntent.action = "STOP_ALARM"
+        stopIntent.putExtra("id", id)
+
+        val stopPendingIntent = PendingIntent.getService(
+            context,
+            id.getIdFlagSecondHalfAsInt(),
+            stopIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
 
         val notificationBuilder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(context, CHANNEL_ID) // For API 26 and above
@@ -61,7 +79,7 @@ class NotificationHandler(private val context: Context) {
             .setAutoCancel(true)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
-            .setDeleteIntent(pendingIntent)
+            .addAction(0, "توقف", stopPendingIntent)
             .setSound(null)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 

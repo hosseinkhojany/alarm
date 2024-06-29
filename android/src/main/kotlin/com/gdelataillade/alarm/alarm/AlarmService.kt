@@ -63,17 +63,7 @@ class AlarmService : Service() {
 //        val appIntent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
 //        val pendingIntent = PendingIntent.getActivity(this, id, appIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
-        val stopIntent = Intent(this, AlarmService::class.java)
-            stopIntent.action = "STOP_ALARM"
-            stopIntent.putExtra("id", id)
-
-        val stopPendingIntent = PendingIntent.getService(
-            this,
-            id.getIdFlagSecondHalfAsInt(),
-            stopIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        val notification = notificationHandler.buildNotification(notificationTitle, notificationBody, fullScreenIntent, stopPendingIntent)
+        val notification = notificationHandler.buildNotification(id, notificationTitle, notificationBody, fullScreenIntent)
 
         // Starting foreground service safely
         try {
